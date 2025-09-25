@@ -1,0 +1,2497 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión de Inventario</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --success-color: #2ecc71;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background-color: var(--secondary-color);
+        }
+        
+        .sidebar {
+            background-color: var(--secondary-color);
+            color: white;
+            height: calc(100vh - 56px);
+            position: fixed;
+            width: 250px;
+            padding-top: 20px;
+        }
+        
+        .sidebar a {
+            color: white;
+            padding: 15px 20px;
+            text-decoration: none;
+            display: block;
+            transition: all 0.3s;
+        }
+        
+        .sidebar a:hover {
+            background-color: var(--primary-color);
+        }
+        
+        .sidebar a.active {
+            background-color: var(--primary-color);
+        }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        
+        .card-dashboard {
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .card-dashboard:hover {
+            transform: translateY(-5px);
+        }
+        
+        .low-stock {
+            border-left: 4px solid var(--accent-color);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .login-container {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
+        }
+        
+        .login-form {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        .product-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+        
+        .alert-low-stock {
+            background-color: #ffeaea;
+            border-left: 4px solid var(--accent-color);
+        }
+        
+        .desktop-shortcut {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 0 0 5px 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .search-result-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        
+        .search-result-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .customer-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        
+        .badge-premium {
+            background-color: #ffc107;
+            color: #000;
+        }
+        
+        .badge-regular {
+            background-color: #6c757d;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Section -->
+    <div id="login-section" class="section active">
+        <div class="login-container">
+            <div class="login-form">
+                <h2 class="text-center mb-4">Sistema de Gestión</h2>
+                <div class="text-center mb-4">
+                    <i class="fas fa-boxes fa-3x text-primary"></i>
+                </div>
+                <form id="login-form">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Contraseña</label>
+                        <input type="password" class="form-control" id="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Iniciar Sesión</button>
+                </form>
+                <p class="text-center mt-3">
+                    ¿No tienes cuenta? <a href="#" id="show-register">Regístrate</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Section -->
+    <div id="register-section" class="section">
+        <div class="login-container">
+            <div class="login-form">
+                <h2 class="text-center mb-4">Crear Cuenta</h2>
+                <div class="text-center mb-4">
+                    <i class="fas fa-user-plus fa-3x text-primary"></i>
+                </div>
+                <form id="register-form">
+                    <div class="mb-3">
+                        <label for="reg-name" class="form-label">Nombre Completo</label>
+                        <input type="text" class="form-control" id="reg-name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reg-email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="reg-email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reg-password" class="form-label">Contraseña</label>
+                        <input type="password" class="form-control" id="reg-password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reg-confirm-password" class="form-label">Confirmar Contraseña</label>
+                        <input type="password" class="form-control" id="reg-confirm-password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Registrarse</button>
+                </form>
+                <p class="text-center mt-3">
+                    ¿Ya tienes cuenta? <a href="#" id="show-login">Inicia Sesión</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app-section" class="section">
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <i class="fas fa-boxes me-2"></i>Sistema de Gestión
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user me-1"></i> <span id="user-name">Usuario</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Configuración</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#" id="create-desktop-shortcut"><i class="fas fa-desktop me-2"></i>Crear acceso directo</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#" id="logout-btn"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="d-flex">
+            <!-- Sidebar -->
+            <div class="sidebar d-none d-lg-block">
+                <a href="#" class="active" data-section="dashboard">
+                    <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+                </a>
+                <a href="#" data-section="inventory">
+                    <i class="fas fa-box me-2"></i> Inventario
+                </a>
+                <a href="#" data-section="customers">
+                    <i class="fas fa-users me-2"></i> Clientes
+                </a>
+                <a href="#" data-section="sales">
+                    <i class="fas fa-shopping-cart me-2"></i> Ventas
+                </a>
+                <a href="#" data-section="reports">
+                    <i class="fas fa-chart-bar me-2"></i> Reportes
+                </a>
+                <a href="#" data-section="alerts">
+                    <i class="fas fa-bell me-2"></i> Alertas
+                    <span class="badge bg-danger float-end" id="alert-count">0</span>
+                </a>
+            </div>
+
+            <!-- Mobile Nav -->
+            <div class="d-lg-none bg-dark w-100 p-2">
+                <div class="d-flex justify-content-around">
+                    <a href="#" class="text-white" data-section="dashboard"><i class="fas fa-tachometer-alt"></i></a>
+                    <a href="#" class="text-white" data-section="inventory"><i class="fas fa-box"></i></a>
+                    <a href="#" class="text-white" data-section="customers"><i class="fas fa-users"></i></a>
+                    <a href="#" class="text-white" data-section="sales"><i class="fas fa-shopping-cart"></i></a>
+                    <a href="#" class="text-white" data-section="reports"><i class="fas fa-chart-bar"></i></a>
+                    <a href="#" class="text-white" data-section="alerts"><i class="fas fa-bell"></i></a>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content w-100">
+                <!-- Dashboard Section -->
+                <div id="dashboard-section" class="section active">
+                    <h2 class="mb-4">Dashboard</h2>
+                    <div class="row">
+                        <div class="col-md-3 mb-4">
+                            <div class="card card-dashboard">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title text-muted">Productos</h6>
+                                            <h3 id="total-products">0</h3>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-boxes fa-2x text-primary"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-4">
+                            <div class="card card-dashboard">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title text-muted">Clientes</h6>
+                                            <h3 id="total-customers">0</h3>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-users fa-2x text-info"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-4">
+                            <div class="card card-dashboard">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title text-muted">Ventas Hoy</h6>
+                                            <h3 id="today-sales">0</h3>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-shopping-cart fa-2x text-success"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-4">
+                            <div class="card card-dashboard">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title text-muted">Stock Bajo</h6>
+                                            <h3 id="low-stock-count">0</h3>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Ventas de la última semana</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="sales-chart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Productos Populares</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="products-chart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5>Productos con Stock Bajo</h5>
+                                    <a href="#" data-section="inventory" class="btn btn-sm btn-primary">Gestionar Inventario</a>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Producto</th>
+                                                    <th>Stock Actual</th>
+                                                    <th>Stock Mínimo</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="low-stock-table">
+                                                <!-- Los productos con stock bajo se cargarán aquí -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory Section -->
+                <div id="inventory-section" class="section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2>Gestión de Inventario</h2>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                            <i class="fas fa-plus me-1"></i> Agregar Producto
+                        </button>
+                    </div>
+
+                    <!-- Buscador de productos -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="search-box">
+                                <input type="text" class="form-control" id="product-search" placeholder="Buscar productos...">
+                                <div class="search-results" id="product-search-results"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="category-filter">
+                                <option value="">Todas las categorías</option>
+                                <option value="Electrónicos">Electrónicos</option>
+                                <option value="Ropa">Ropa</option>
+                                <option value="Hogar">Hogar</option>
+                                <option value="Deportes">Deportes</option>
+                                <option value="Juguetes">Juguetes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="stock-filter">
+                                <option value="">Todo el stock</option>
+                                <option value="low">Stock bajo</option>
+                                <option value="normal">Stock normal</option>
+                                <option value="out">Sin stock</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Imagen</th>
+                                            <th>Nombre</th>
+                                            <th>Categoría</th>
+                                            <th>Precio</th>
+                                            <th>Stock</th>
+                                            <th>Stock Mínimo</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inventory-table">
+                                        <!-- Los productos se cargarán aquí -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customers Section -->
+                <div id="customers-section" class="section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2>Gestión de Clientes</h2>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+                            <i class="fas fa-user-plus me-1"></i> Agregar Cliente
+                        </button>
+                    </div>
+
+                    <!-- Buscador de clientes -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="search-box">
+                                <input type="text" class="form-control" id="customer-search" placeholder="Buscar clientes...">
+                                <div class="search-results" id="customer-search-results"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="customer-type-filter">
+                                <option value="">Todos los tipos</option>
+                                <option value="premium">Premium</option>
+                                <option value="regular">Regular</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="customer-status-filter">
+                                <option value="">Todos los estados</option>
+                                <option value="active">Activos</option>
+                                <option value="inactive">Inactivos</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Email</th>
+                                            <th>Teléfono</th>
+                                            <th>Tipo</th>
+                                            <th>Compras</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="customers-table">
+                                        <!-- Los clientes se cargarán aquí -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sales Section -->
+                <div id="sales-section" class="section">
+                    <h2 class="mb-4">Registro de Ventas</h2>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5>Nueva Venta</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="customer-select" class="form-label">Cliente (Opcional)</label>
+                                            <select class="form-select" id="customer-select">
+                                                <option value="">Seleccione un cliente</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="product-select" class="form-label">Seleccionar Producto</label>
+                                            <select class="form-select" id="product-select">
+                                                <option selected>Seleccione un producto</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-3">
+                                            <label for="quantity" class="form-label">Cantidad</label>
+                                            <input type="number" class="form-control" id="quantity" min="1" value="1">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">&nbsp;</label>
+                                            <button class="btn btn-primary w-100" id="add-to-cart">
+                                                <i class="fas fa-cart-plus me-1"></i> Agregar
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Producto</th>
+                                                    <th>Precio Unitario</th>
+                                                    <th>Cantidad</th>
+                                                    <th>Subtotal</th>
+                                                    <th>Acción</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="cart-table">
+                                                <!-- Los productos del carrito se cargarán aquí -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <div>
+                                            <h5>Total: <span id="cart-total">$0.00</span></h5>
+                                        </div>
+                                        <div>
+                                            <button class="btn btn-success" id="complete-sale">
+                                                <i class="fas fa-check me-1"></i> Completar Venta
+                                            </button>
+                                            <button class="btn btn-secondary" id="clear-cart">
+                                                <i class="fas fa-trash me-1"></i> Limpiar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Historial de Ventas</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Fecha</th>
+                                                    <th>Cliente</th>
+                                                    <th>Total</th>
+                                                    <th>Acción</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="sales-history-table">
+                                                <!-- El historial de ventas se cargará aquí -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports Section -->
+                <div id="reports-section" class="section">
+                    <h2 class="mb-4">Reportes y Gráficos</h2>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Ventas por Mes</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="monthly-sales-chart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5>Ventas por Categoría</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="category-sales-chart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Reporte de Ventas</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="start-date" class="form-label">Fecha Inicio</label>
+                                    <input type="date" class="form-control" id="start-date">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="end-date" class="form-label">Fecha Fin</label>
+                                    <input type="date" class="form-control" id="end-date">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">&nbsp;</label>
+                                    <button class="btn btn-primary w-100" id="generate-report">
+                                        <i class="fas fa-chart-line me-1"></i> Generar Reporte
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Cliente</th>
+                                            <th>Producto</th>
+                                            <th>Cantidad</th>
+                                            <th>Precio Unitario</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="report-table">
+                                        <!-- Los datos del reporte se cargarán aquí -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="d-flex justify-content-end mt-3">
+                                <button class="btn btn-success" id="export-pdf">
+                                    <i class="fas fa-file-pdf me-1"></i> Exportar a PDF
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerts Section -->
+                <div id="alerts-section" class="section">
+                    <h2 class="mb-4">Alertas de Stock Bajo</h2>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Producto</th>
+                                            <th>Stock Actual</th>
+                                            <th>Stock Mínimo</th>
+                                            <th>Diferencia</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="alerts-table">
+                                        <!-- Las alertas se cargarán aquí -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar Producto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-product-form">
+                        <div class="mb-3">
+                            <label for="product-name" class="form-label">Nombre del Producto</label>
+                            <input type="text" class="form-control" id="product-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="product-category" class="form-label">Categoría</label>
+                            <select class="form-select" id="product-category" required>
+                                <option value="">Seleccione una categoría</option>
+                                <option value="Electrónicos">Electrónicos</option>
+                                <option value="Ropa">Ropa</option>
+                                <option value="Hogar">Hogar</option>
+                                <option value="Deportes">Deportes</option>
+                                <option value="Juguetes">Juguetes</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="product-price" class="form-label">Precio</label>
+                            <input type="number" class="form-control" id="product-price" min="0" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="product-stock" class="form-label">Stock Inicial</label>
+                            <input type="number" class="form-control" id="product-stock" min="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="product-min-stock" class="form-label">Stock Mínimo</label>
+                            <input type="number" class="form-control" id="product-min-stock" min="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="product-image" class="form-label">Imagen (URL)</label>
+                            <input type="url" class="form-control" id="product-image" placeholder="Opcional">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="save-product">Guardar Producto</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Product Modal -->
+    <div class="modal fade" id="editProductModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Producto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-product-form">
+                        <input type="hidden" id="edit-product-id">
+                        <div class="mb-3">
+                            <label for="edit-product-name" class="form-label">Nombre del Producto</label>
+                            <input type="text" class="form-control" id="edit-product-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-product-category" class="form-label">Categoría</label>
+                            <select class="form-select" id="edit-product-category" required>
+                                <option value="">Seleccione una categoría</option>
+                                <option value="Electrónicos">Electrónicos</option>
+                                <option value="Ropa">Ropa</option>
+                                <option value="Hogar">Hogar</option>
+                                <option value="Deportes">Deportes</option>
+                                <option value="Juguetes">Juguetes</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-product-price" class="form-label">Precio</label>
+                            <input type="number" class="form-control" id="edit-product-price" min="0" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-product-stock" class="form-label">Stock</label>
+                            <input type="number" class="form-control" id="edit-product-stock" min="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-product-min-stock" class="form-label">Stock Mínimo</label>
+                            <input type="number" class="form-control" id="edit-product-min-stock" min="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-product-image" class="form-label">Imagen (URL)</label>
+                            <input type="url" class="form-control" id="edit-product-image">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="update-product">Actualizar Producto</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Customer Modal -->
+    <div class="modal fade" id="addCustomerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Agregar Cliente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-customer-form">
+                        <div class="mb-3">
+                            <label for="customer-name" class="form-label">Nombre Completo</label>
+                            <input type="text" class="form-control" id="customer-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="customer-email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="customer-email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="customer-phone" class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="customer-phone">
+                        </div>
+                        <div class="mb-3">
+                            <label for="customer-address" class="form-label">Dirección</label>
+                            <textarea class="form-control" id="customer-address" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="customer-type" class="form-label">Tipo de Cliente</label>
+                            <select class="form-select" id="customer-type" required>
+                                <option value="regular">Regular</option>
+                                <option value="premium">Premium</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="save-customer">Guardar Cliente</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Customer Modal -->
+    <div class="modal fade" id="editCustomerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Cliente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-customer-form">
+                        <input type="hidden" id="edit-customer-id">
+                        <div class="mb-3">
+                            <label for="edit-customer-name" class="form-label">Nombre Completo</label>
+                            <input type="text" class="form-control" id="edit-customer-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-customer-email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="edit-customer-email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-customer-phone" class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="edit-customer-phone">
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-customer-address" class="form-label">Dirección</label>
+                            <textarea class="form-control" id="edit-customer-address" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-customer-type" class="form-label">Tipo de Cliente</label>
+                            <select class="form-select" id="edit-customer-type" required>
+                                <option value="regular">Regular</option>
+                                <option value="premium">Premium</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-customer-status" class="form-label">Estado</label>
+                            <select class="form-select" id="edit-customer-status" required>
+                                <option value="active">Activo</option>
+                                <option value="inactive">Inactivo</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="update-customer">Actualizar Cliente</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Desktop Shortcut Button -->
+    <div class="desktop-shortcut">
+        <button class="btn btn-primary btn-lg rounded-circle shadow" data-bs-toggle="tooltip" data-bs-placement="left" title="Crear acceso directo en el escritorio" id="desktop-shortcut-btn">
+            <i class="fas fa-desktop"></i>
+        </button>
+    </div>
+
+    <!-- Bootstrap & jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+    <script>
+        // Variables globales
+        let currentUser = null;
+        let users = JSON.parse(localStorage.getItem('users')) || [];
+        let products = JSON.parse(localStorage.getItem('products')) || [];
+        let customers = JSON.parse(localStorage.getItem('customers')) || [];
+        let sales = JSON.parse(localStorage.getItem('sales')) || [];
+        let cart = [];
+        let companyInfo = JSON.parse(localStorage.getItem('companyInfo')) || {
+            name: "Mi Empresa",
+            address: "Calle Principal #123",
+            city: "Ciudad",
+            phone: "+1234567890",
+            email: "contacto@miempresa.com"
+        };
+
+        // Inicialización
+        $(document).ready(function() {
+            // Verificar si hay usuario logueado
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showApp();
+            } else {
+                showLogin();
+            }
+
+            // Inicializar tooltips
+            $('[data-bs-toggle="tooltip"]').tooltip();
+
+            // Event Listeners
+            $('#show-register').click(function(e) {
+                e.preventDefault();
+                showRegister();
+            });
+
+            $('#show-login').click(function(e) {
+                e.preventDefault();
+                showLogin();
+            });
+
+            $('#login-form').submit(function(e) {
+                e.preventDefault();
+                login();
+            });
+
+            $('#register-form').submit(function(e) {
+                e.preventDefault();
+                register();
+            });
+
+            $('#logout-btn').click(function(e) {
+                e.preventDefault();
+                logout();
+            });
+
+            $('.sidebar a, .bg-dark a').click(function(e) {
+                e.preventDefault();
+                const section = $(this).data('section');
+                showSection(section);
+                
+                // Actualizar clase active en sidebar
+                $('.sidebar a').removeClass('active');
+                $(`.sidebar a[data-section="${section}"]`).addClass('active');
+            });
+
+            $('#save-product').click(addProduct);
+            $('#update-product').click(updateProduct);
+            $('#save-customer').click(addCustomer);
+            $('#update-customer').click(updateCustomer);
+            $('#add-to-cart').click(addToCart);
+            $('#clear-cart').click(clearCart);
+            $('#complete-sale').click(completeSale);
+            $('#generate-report').click(generateReport);
+            $('#export-pdf').click(exportToPDF);
+            $('#create-desktop-shortcut, #desktop-shortcut-btn').click(createDesktopShortcut);
+
+            // Event listeners para búsquedas
+            $('#product-search').on('input', searchProducts);
+            $('#customer-search').on('input', searchCustomers);
+            $('#category-filter, #stock-filter').change(filterProducts);
+            $('#customer-type-filter, #customer-status-filter').change(filterCustomers);
+
+            // Cerrar resultados de búsqueda al hacer clic fuera
+            $(document).click(function(e) {
+                if (!$(e.target).closest('.search-box').length) {
+                    $('#product-search-results, #customer-search-results').hide();
+                }
+            });
+
+            // Inicializar datos de ejemplo si no hay datos
+            if (products.length === 0) {
+                initializeSampleData();
+            }
+
+            // Actualizar la interfaz
+            updateUI();
+        });
+
+        // Funciones de autenticación
+        function showLogin() {
+            $('#login-section').addClass('active');
+            $('#register-section').removeClass('active');
+            $('#app-section').removeClass('active');
+        }
+
+        function showRegister() {
+            $('#login-section').removeClass('active');
+            $('#register-section').addClass('active');
+            $('#app-section').removeClass('active');
+        }
+
+        function showApp() {
+            $('#login-section').removeClass('active');
+            $('#register-section').removeClass('active');
+            $('#app-section').addClass('active');
+            updateUI();
+        }
+
+        function login() {
+            const email = $('#email').val();
+            const password = $('#password').val();
+            
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                showApp();
+            } else {
+                alert('Email o contraseña incorrectos');
+            }
+        }
+
+        function register() {
+            const name = $('#reg-name').val();
+            const email = $('#reg-email').val();
+            const password = $('#reg-password').val();
+            const confirmPassword = $('#reg-confirm-password').val();
+            
+            if (password !== confirmPassword) {
+                alert('Las contraseñas no coinciden');
+                return;
+            }
+            
+            if (users.some(u => u.email === email)) {
+                alert('Este email ya está registrado');
+                return;
+            }
+            
+            const newUser = {
+                id: Date.now(),
+                name,
+                email,
+                password
+            };
+            
+            users.push(newUser);
+            localStorage.setItem('users', JSON.stringify(users));
+            
+            alert('Registro exitoso. Ahora puede iniciar sesión.');
+            showLogin();
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            showLogin();
+        }
+
+        // Funciones de la aplicación
+        function showSection(section) {
+            $('.main-content .section').removeClass('active');
+            $(`#${section}-section`).addClass('active');
+            
+            // Si es la sección de reportes, generar gráficos
+            if (section === 'reports') {
+                generateCharts();
+            }
+        }
+
+        function updateUI() {
+            if (!currentUser) return;
+            
+            // Actualizar nombre de usuario
+            $('#user-name').text(currentUser.name);
+            
+            // Actualizar dashboard
+            updateDashboard();
+            
+            // Actualizar tablas
+            updateInventoryTable();
+            updateCustomersTable();
+            updateSalesTable();
+            updateAlertsTable();
+            updateProductSelect();
+            updateCustomerSelect();
+            
+            // Generar gráficos del dashboard
+            generateDashboardCharts();
+        }
+
+        function updateDashboard() {
+            const totalProducts = products.length;
+            const totalCustomers = customers.length;
+            const today = new Date().toISOString().split('T')[0];
+            const todaySales = sales.filter(sale => sale.date === today).length;
+            
+            const lowStockProducts = products.filter(p => p.stock <= p.minStock);
+            const lowStockCount = lowStockProducts.length;
+            
+            const totalIncome = sales.reduce((total, sale) => total + sale.total, 0);
+            
+            $('#total-products').text(totalProducts);
+            $('#total-customers').text(totalCustomers);
+            $('#today-sales').text(todaySales);
+            $('#low-stock-count').text(lowStockCount);
+            $('#total-income').text('$' + totalIncome.toFixed(2));
+            
+            // Actualizar tabla de stock bajo
+            const lowStockTable = $('#low-stock-table');
+            lowStockTable.empty();
+            
+            lowStockProducts.forEach(product => {
+                lowStockTable.append(`
+                    <tr class="alert-low-stock">
+                        <td>${product.name}</td>
+                        <td>${product.stock}</td>
+                        <td>${product.minStock}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary edit-product" data-id="${product.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+            
+            // Agregar event listeners a los botones de editar
+            $('.edit-product').click(function() {
+                const productId = $(this).data('id');
+                editProduct(productId);
+            });
+            
+            // Actualizar contador de alertas
+            $('#alert-count').text(lowStockCount);
+        }
+
+        function updateInventoryTable() {
+            const inventoryTable = $('#inventory-table');
+            inventoryTable.empty();
+            
+            products.forEach(product => {
+                const lowStockClass = product.stock <= product.minStock ? 'class="table-danger"' : '';
+                
+                inventoryTable.append(`
+                    <tr ${lowStockClass}>
+                        <td>
+                            ${product.image ? 
+                                `<img src="${product.image}" class="product-image" alt="${product.name}">` : 
+                                `<i class="fas fa-box product-image-placeholder"></i>`
+                            }
+                        </td>
+                        <td>${product.name}</td>
+                        <td>${product.category}</td>
+                        <td>$${product.price.toFixed(2)}</td>
+                        <td>${product.stock}</td>
+                        <td>${product.minStock}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary edit-product" data-id="${product.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-product" data-id="${product.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+            
+            // Agregar event listeners
+            $('.edit-product').click(function() {
+                const productId = $(this).data('id');
+                editProduct(productId);
+            });
+            
+            $('.delete-product').click(function() {
+                const productId = $(this).data('id');
+                deleteProduct(productId);
+            });
+        }
+
+        function updateCustomersTable() {
+            const customersTable = $('#customers-table');
+            customersTable.empty();
+            
+            customers.forEach(customer => {
+                const statusClass = customer.status === 'active' ? 'text-success' : 'text-secondary';
+                const typeBadge = customer.type === 'premium' ? 
+                    '<span class="customer-badge badge-premium">Premium</span>' : 
+                    '<span class="customer-badge badge-regular">Regular</span>';
+                
+                // Calcular compras totales del cliente
+                const customerSales = sales.filter(sale => sale.customerId === customer.id);
+                const totalPurchases = customerSales.reduce((total, sale) => total + sale.total, 0);
+                
+                customersTable.append(`
+                    <tr>
+                        <td>${customer.name}</td>
+                        <td>${customer.email}</td>
+                        <td>${customer.phone || 'N/A'}</td>
+                        <td>${typeBadge}</td>
+                        <td>$${totalPurchases.toFixed(2)}</td>
+                        <td><span class="${statusClass}">${customer.status === 'active' ? 'Activo' : 'Inactivo'}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-primary edit-customer" data-id="${customer.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-customer" data-id="${customer.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+            
+            // Agregar event listeners
+            $('.edit-customer').click(function() {
+                const customerId = $(this).data('id');
+                editCustomer(customerId);
+            });
+            
+            $('.delete-customer').click(function() {
+                const customerId = $(this).data('id');
+                deleteCustomer(customerId);
+            });
+        }
+
+        function updateSalesTable() {
+            const salesHistoryTable = $('#sales-history-table');
+            salesHistoryTable.empty();
+            
+            // Mostrar las últimas 10 ventas
+            const recentSales = sales.slice(-10).reverse();
+            
+            recentSales.forEach(sale => {
+                const customer = sale.customerId ? customers.find(c => c.id === sale.customerId) : null;
+                const customerName = customer ? customer.name : 'Cliente no registrado';
+                
+                salesHistoryTable.append(`
+                    <tr>
+                        <td>${sale.date}</td>
+                        <td>${customerName}</td>
+                        <td>$${sale.total.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info view-sale" data-id="${sale.id}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-success invoice-sale" data-id="${sale.id}">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+            
+            // Agregar event listeners
+            $('.view-sale').click(function() {
+                const saleId = $(this).data('id');
+                viewSale(saleId);
+            });
+            
+            $('.invoice-sale').click(function() {
+                const saleId = $(this).data('id');
+                generateInvoice(saleId);
+            });
+        }
+
+        function updateAlertsTable() {
+            const alertsTable = $('#alerts-table');
+            alertsTable.empty();
+            
+            const lowStockProducts = products.filter(p => p.stock <= p.minStock);
+            
+            lowStockProducts.forEach(product => {
+                alertsTable.append(`
+                    <tr class="table-danger">
+                        <td>${product.name}</td>
+                        <td>${product.stock}</td>
+                        <td>${product.minStock}</td>
+                        <td>${product.minStock - product.stock}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary edit-product" data-id="${product.id}">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+            
+            // Agregar event listeners
+            $('.edit-product').click(function() {
+                const productId = $(this).data('id');
+                editProduct(productId);
+            });
+        }
+
+        function updateProductSelect() {
+            const productSelect = $('#product-select');
+            productSelect.empty();
+            productSelect.append('<option selected>Seleccione un producto</option>');
+            
+            products.forEach(product => {
+                if (product.stock > 0) {
+                    productSelect.append(`<option value="${product.id}">${product.name} - $${product.price.toFixed(2)} (Stock: ${product.stock})</option>`);
+                }
+            });
+        }
+
+        function updateCustomerSelect() {
+            const customerSelect = $('#customer-select');
+            customerSelect.empty();
+            customerSelect.append('<option value="">Seleccione un cliente</option>');
+            
+            customers.filter(c => c.status === 'active').forEach(customer => {
+                customerSelect.append(`<option value="${customer.id}">${customer.name} - ${customer.email}</option>`);
+            });
+        }
+
+        function updateCart() {
+            const cartTable = $('#cart-table');
+            cartTable.empty();
+            
+            let cartTotal = 0;
+            
+            cart.forEach(item => {
+                const subtotal = item.price * item.quantity;
+                cartTotal += subtotal;
+                
+                cartTable.append(`
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>$${item.price.toFixed(2)}</td>
+                        <td>${item.quantity}</td>
+                        <td>$${subtotal.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger remove-from-cart" data-id="${item.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+            
+            $('#cart-total').text('$' + cartTotal.toFixed(2));
+            
+            // Agregar event listeners
+            $('.remove-from-cart').click(function() {
+                const productId = $(this).data('id');
+                removeFromCart(productId);
+            });
+        }
+
+        // Funciones de búsqueda
+        function searchProducts() {
+            const query = $('#product-search').val().toLowerCase();
+            const resultsContainer = $('#product-search-results');
+            
+            if (query.length < 2) {
+                resultsContainer.hide();
+                return;
+            }
+            
+            const filteredProducts = products.filter(product => 
+                product.name.toLowerCase().includes(query) || 
+                product.category.toLowerCase().includes(query)
+            );
+            
+            resultsContainer.empty();
+            
+            if (filteredProducts.length === 0) {
+                resultsContainer.append('<div class="search-result-item">No se encontraron productos</div>');
+            } else {
+                filteredProducts.forEach(product => {
+                    resultsContainer.append(`
+                        <div class="search-result-item" data-id="${product.id}">
+                            <div><strong>${product.name}</strong></div>
+                            <div class="small">${product.category} - Stock: ${product.stock}</div>
+                            <div class="small">Precio: $${product.price.toFixed(2)}</div>
+                        </div>
+                    `);
+                });
+                
+                // Agregar event listeners a los resultados
+                $('.search-result-item[data-id]').click(function() {
+                    const productId = parseInt($(this).data('id'));
+                    const product = products.find(p => p.id === productId);
+                    
+                    if (product) {
+                        $('#product-search').val(product.name);
+                        resultsContainer.hide();
+                        
+                        // Seleccionar el producto en el dropdown de ventas
+                        $('#product-select').val(productId);
+                    }
+                });
+            }
+            
+            resultsContainer.show();
+        }
+
+        function searchCustomers() {
+            const query = $('#customer-search').val().toLowerCase();
+            const resultsContainer = $('#customer-search-results');
+            
+            if (query.length < 2) {
+                resultsContainer.hide();
+                return;
+            }
+            
+            const filteredCustomers = customers.filter(customer => 
+                customer.name.toLowerCase().includes(query) || 
+                customer.email.toLowerCase().includes(query) ||
+                (customer.phone && customer.phone.includes(query))
+            );
+            
+            resultsContainer.empty();
+            
+            if (filteredCustomers.length === 0) {
+                resultsContainer.append('<div class="search-result-item">No se encontraron clientes</div>');
+            } else {
+                filteredCustomers.forEach(customer => {
+                    const status = customer.status === 'active' ? 'Activo' : 'Inactivo';
+                    const type = customer.type === 'premium' ? 'Premium' : 'Regular';
+                    
+                    resultsContainer.append(`
+                        <div class="search-result-item" data-id="${customer.id}">
+                            <div><strong>${customer.name}</strong></div>
+                            <div class="small">${customer.email} - ${customer.phone || 'Sin teléfono'}</div>
+                            <div class="small">${type} - ${status}</div>
+                        </div>
+                    `);
+                });
+                
+                // Agregar event listeners a los resultados
+                $('.search-result-item[data-id]').click(function() {
+                    const customerId = parseInt($(this).data('id'));
+                    const customer = customers.find(c => c.id === customerId);
+                    
+                    if (customer) {
+                        $('#customer-search').val(customer.name);
+                        resultsContainer.hide();
+                        
+                        // Seleccionar el cliente en el dropdown de ventas
+                        $('#customer-select').val(customerId);
+                    }
+                });
+            }
+            
+            resultsContainer.show();
+        }
+
+        function filterProducts() {
+            const category = $('#category-filter').val();
+            const stockFilter = $('#stock-filter').val();
+            
+            let filteredProducts = products;
+            
+            if (category) {
+                filteredProducts = filteredProducts.filter(p => p.category === category);
+            }
+            
+            if (stockFilter === 'low') {
+                filteredProducts = filteredProducts.filter(p => p.stock <= p.minStock);
+            } else if (stockFilter === 'normal') {
+                filteredProducts = filteredProducts.filter(p => p.stock > p.minStock && p.stock > 0);
+            } else if (stockFilter === 'out') {
+                filteredProducts = filteredProducts.filter(p => p.stock === 0);
+            }
+            
+            const inventoryTable = $('#inventory-table');
+            inventoryTable.empty();
+            
+            filteredProducts.forEach(product => {
+                const lowStockClass = product.stock <= product.minStock ? 'class="table-danger"' : '';
+                
+                inventoryTable.append(`
+                    <tr ${lowStockClass}>
+                        <td>
+                            ${product.image ? 
+                                `<img src="${product.image}" class="product-image" alt="${product.name}">` : 
+                                `<i class="fas fa-box product-image-placeholder"></i>`
+                            }
+                        </td>
+                        <td>${product.name}</td>
+                        <td>${product.category}</td>
+                        <td>$${product.price.toFixed(2)}</td>
+                        <td>${product.stock}</td>
+                        <td>${product.minStock}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary edit-product" data-id="${product.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-product" data-id="${product.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+            
+            // Agregar event listeners
+            $('.edit-product').click(function() {
+                const productId = $(this).data('id');
+                editProduct(productId);
+            });
+            
+            $('.delete-product').click(function() {
+                const productId = $(this).data('id');
+                deleteProduct(productId);
+            });
+        }
+
+        function filterCustomers() {
+            const typeFilter = $('#customer-type-filter').val();
+            const statusFilter = $('#customer-status-filter').val();
+            
+            let filteredCustomers = customers;
+            
+            if (typeFilter) {
+                filteredCustomers = filteredCustomers.filter(c => c.type === typeFilter);
+            }
+            
+            if (statusFilter) {
+                filteredCustomers = filteredCustomers.filter(c => c.status === statusFilter);
+            }
+            
+            const customersTable = $('#customers-table');
+            customersTable.empty();
+            
+            filteredCustomers.forEach(customer => {
+                const statusClass = customer.status === 'active' ? 'text-success' : 'text-secondary';
+                const typeBadge = customer.type === 'premium' ? 
+                    '<span class="customer-badge badge-premium">Premium</span>' : 
+                    '<span class="customer-badge badge-regular">Regular</span>';
+                
+                // Calcular compras totales del cliente
+                const customerSales = sales.filter(sale => sale.customerId === customer.id);
+                const totalPurchases = customerSales.reduce((total, sale) => total + sale.total, 0);
+                
+                customersTable.append(`
+                    <tr>
+                        <td>${customer.name}</td>
+                        <td>${customer.email}</td>
+                        <td>${customer.phone || 'N/A'}</td>
+                        <td>${typeBadge}</td>
+                        <td>$${totalPurchases.toFixed(2)}</td>
+                        <td><span class="${statusClass}">${customer.status === 'active' ? 'Activo' : 'Inactivo'}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-primary edit-customer" data-id="${customer.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-customer" data-id="${customer.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+            
+            // Agregar event listeners
+            $('.edit-customer').click(function() {
+                const customerId = $(this).data('id');
+                editCustomer(customerId);
+            });
+            
+            $('.delete-customer').click(function() {
+                const customerId = $(this).data('id');
+                deleteCustomer(customerId);
+            });
+        }
+
+        // Funciones de productos
+        function addProduct() {
+            const name = $('#product-name').val();
+            const category = $('#product-category').val();
+            const price = parseFloat($('#product-price').val());
+            const stock = parseInt($('#product-stock').val());
+            const minStock = parseInt($('#product-min-stock').val());
+            const image = $('#product-image').val();
+            
+            const newProduct = {
+                id: Date.now(),
+                name,
+                category,
+                price,
+                stock,
+                minStock,
+                image
+            };
+            
+            products.push(newProduct);
+            localStorage.setItem('products', JSON.stringify(products));
+            
+            $('#addProductModal').modal('hide');
+            $('#add-product-form')[0].reset();
+            
+            updateUI();
+            alert('Producto agregado correctamente');
+        }
+
+        function editProduct(productId) {
+            const product = products.find(p => p.id === productId);
+            
+            if (product) {
+                $('#edit-product-id').val(product.id);
+                $('#edit-product-name').val(product.name);
+                $('#edit-product-category').val(product.category);
+                $('#edit-product-price').val(product.price);
+                $('#edit-product-stock').val(product.stock);
+                $('#edit-product-min-stock').val(product.minStock);
+                $('#edit-product-image').val(product.image || '');
+                
+                $('#editProductModal').modal('show');
+            }
+        }
+
+        function updateProduct() {
+            const id = parseInt($('#edit-product-id').val());
+            const name = $('#edit-product-name').val();
+            const category = $('#edit-product-category').val();
+            const price = parseFloat($('#edit-product-price').val());
+            const stock = parseInt($('#edit-product-stock').val());
+            const minStock = parseInt($('#edit-product-min-stock').val());
+            const image = $('#edit-product-image').val();
+            
+            const index = products.findIndex(p => p.id === id);
+            
+            if (index !== -1) {
+                products[index] = {
+                    ...products[index],
+                    name,
+                    category,
+                    price,
+                    stock,
+                    minStock,
+                    image: image || products[index].image
+                };
+                
+                localStorage.setItem('products', JSON.stringify(products));
+                
+                $('#editProductModal').modal('hide');
+                updateUI();
+                alert('Producto actualizado correctamente');
+            }
+        }
+
+        function deleteProduct(productId) {
+            if (confirm('¿Está seguro de que desea eliminar este producto?')) {
+                products = products.filter(p => p.id !== productId);
+                localStorage.setItem('products', JSON.stringify(products));
+                updateUI();
+                alert('Producto eliminado correctamente');
+            }
+        }
+
+        // Funciones de clientes
+        function addCustomer() {
+            const name = $('#customer-name').val();
+            const email = $('#customer-email').val();
+            const phone = $('#customer-phone').val();
+            const address = $('#customer-address').val();
+            const type = $('#customer-type').val();
+            
+            // Verificar si el email ya existe
+            if (customers.some(c => c.email === email)) {
+                alert('Ya existe un cliente con este email');
+                return;
+            }
+            
+            const newCustomer = {
+                id: Date.now(),
+                name,
+                email,
+                phone,
+                address,
+                type,
+                status: 'active',
+                createdAt: new Date().toISOString()
+            };
+            
+            customers.push(newCustomer);
+            localStorage.setItem('customers', JSON.stringify(customers));
+            
+            $('#addCustomerModal').modal('hide');
+            $('#add-customer-form')[0].reset();
+            
+            updateUI();
+            alert('Cliente agregado correctamente');
+        }
+
+        function editCustomer(customerId) {
+            const customer = customers.find(c => c.id === customerId);
+            
+            if (customer) {
+                $('#edit-customer-id').val(customer.id);
+                $('#edit-customer-name').val(customer.name);
+                $('#edit-customer-email').val(customer.email);
+                $('#edit-customer-phone').val(customer.phone || '');
+                $('#edit-customer-address').val(customer.address || '');
+                $('#edit-customer-type').val(customer.type);
+                $('#edit-customer-status').val(customer.status);
+                
+                $('#editCustomerModal').modal('show');
+            }
+        }
+
+        function updateCustomer() {
+            const id = parseInt($('#edit-customer-id').val());
+            const name = $('#edit-customer-name').val();
+            const email = $('#edit-customer-email').val();
+            const phone = $('#edit-customer-phone').val();
+            const address = $('#edit-customer-address').val();
+            const type = $('#edit-customer-type').val();
+            const status = $('#edit-customer-status').val();
+            
+            const index = customers.findIndex(c => c.id === id);
+            
+            if (index !== -1) {
+                // Verificar si el email ya existe en otro cliente
+                if (customers.some(c => c.email === email && c.id !== id)) {
+                    alert('Ya existe otro cliente con este email');
+                    return;
+                }
+                
+                customers[index] = {
+                    ...customers[index],
+                    name,
+                    email,
+                    phone,
+                    address,
+                    type,
+                    status
+                };
+                
+                localStorage.setItem('customers', JSON.stringify(customers));
+                
+                $('#editCustomerModal').modal('hide');
+                updateUI();
+                alert('Cliente actualizado correctamente');
+            }
+        }
+
+        function deleteCustomer(customerId) {
+            if (confirm('¿Está seguro de que desea eliminar este cliente?')) {
+                customers = customers.filter(c => c.id !== customerId);
+                localStorage.setItem('customers', JSON.stringify(customers));
+                updateUI();
+                alert('Cliente eliminado correctamente');
+            }
+        }
+
+        // Funciones de ventas
+        function addToCart() {
+            const productId = parseInt($('#product-select').val());
+            const quantity = parseInt($('#quantity').val());
+            
+            if (isNaN(productId)) {
+                alert('Seleccione un producto');
+                return;
+            }
+            
+            if (isNaN(quantity) || quantity < 1) {
+                alert('Ingrese una cantidad válida');
+                return;
+            }
+            
+            const product = products.find(p => p.id === productId);
+            
+            if (!product) {
+                alert('Producto no encontrado');
+                return;
+            }
+            
+            if (product.stock < quantity) {
+                alert('No hay suficiente stock disponible');
+                return;
+            }
+            
+            // Verificar si el producto ya está en el carrito
+            const existingItem = cart.find(item => item.id === productId);
+            
+            if (existingItem) {
+                if (existingItem.quantity + quantity > product.stock) {
+                    alert('No hay suficiente stock disponible');
+                    return;
+                }
+                
+                existingItem.quantity += quantity;
+            } else {
+                cart.push({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    quantity: quantity
+                });
+            }
+            
+            updateCart();
+            $('#quantity').val(1);
+        }
+
+        function removeFromCart(productId) {
+            cart = cart.filter(item => item.id !== productId);
+            updateCart();
+        }
+
+        function clearCart() {
+            if (confirm('¿Está seguro de que desea vaciar el carrito?')) {
+                cart = [];
+                updateCart();
+            }
+        }
+
+        function completeSale() {
+            if (cart.length === 0) {
+                alert('El carrito está vacío');
+                return;
+            }
+            
+            // Verificar stock antes de completar la venta
+            for (const item of cart) {
+                const product = products.find(p => p.id === item.id);
+                
+                if (!product || product.stock < item.quantity) {
+                    alert(`No hay suficiente stock de ${item.name}`);
+                    return;
+                }
+            }
+            
+            // Actualizar stock y registrar venta
+            let total = 0;
+            
+            for (const item of cart) {
+                const productIndex = products.findIndex(p => p.id === item.id);
+                
+                if (productIndex !== -1) {
+                    products[productIndex].stock -= item.quantity;
+                    total += item.price * item.quantity;
+                }
+            }
+            
+            const customerId = $('#customer-select').val() ? parseInt($('#customer-select').val()) : null;
+            
+            const newSale = {
+                id: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                customerId: customerId,
+                items: [...cart],
+                total: total
+            };
+            
+            sales.push(newSale);
+            
+            // Guardar en localStorage
+            localStorage.setItem('products', JSON.stringify(products));
+            localStorage.setItem('sales', JSON.stringify(sales));
+            
+            // Generar factura PDF
+            generateInvoice(newSale.id);
+            
+            // Limpiar carrito y actualizar UI
+            cart = [];
+            $('#customer-select').val('');
+            updateCart();
+            updateUI();
+            
+            alert('Venta completada correctamente');
+        }
+
+        function viewSale(saleId) {
+            const sale = sales.find(s => s.id === saleId);
+            
+            if (sale) {
+                const customer = sale.customerId ? customers.find(c => c.id === sale.customerId) : null;
+                const customerInfo = customer ? `Cliente: ${customer.name} (${customer.email})` : 'Cliente no registrado';
+                
+                let message = `Venta #${sale.id}\nFecha: ${sale.date}\n${customerInfo}\n\nProductos:\n`;
+                
+                sale.items.forEach(item => {
+                    message += `${item.name} - ${item.quantity} x $${item.price.toFixed(2)} = $${(item.quantity * item.price).toFixed(2)}\n`;
+                });
+                
+                message += `\nTotal: $${sale.total.toFixed(2)}`;
+                
+                alert(message);
+            }
+        }
+
+        function generateInvoice(saleId) {
+            const sale = sales.find(s => s.id === saleId);
+            
+            if (sale) {
+                const customer = sale.customerId ? customers.find(c => c.id === sale.customerId) : null;
+                
+                // Usar jsPDF para generar la factura
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Encabezado de la factura
+                doc.setFontSize(22);
+                doc.setTextColor(40);
+                doc.text('FACTURA', 105, 20, { align: 'center' });
+                
+                doc.setFontSize(12);
+                doc.text(`Nº: ${sale.id}`, 15, 30);
+                doc.text(`Fecha: ${sale.date}`, 15, 37);
+                
+                // Información de la empresa
+                doc.setFontSize(10);
+                doc.text(companyInfo.name, 15, 50);
+                doc.text(companyInfo.address, 15, 57);
+                doc.text(`${companyInfo.city} | Tel: ${companyInfo.phone}`, 15, 64);
+                doc.text(`Email: ${companyInfo.email}`, 15, 71);
+                
+                // Información del cliente
+                if (customer) {
+                    doc.setFontSize(10);
+                    doc.text('Cliente:', 130, 50);
+                    doc.text(customer.name, 130, 57);
+                    doc.text(customer.email, 130, 64);
+                    if (customer.phone) {
+                        doc.text(`Tel: ${customer.phone}`, 130, 71);
+                    }
+                }
+                
+                // Línea separadora
+                doc.setDrawColor(200);
+                doc.line(15, 80, 195, 80);
+                
+                // Detalles de la factura
+                doc.setFontSize(12);
+                doc.text('Descripción', 15, 90);
+                doc.text('Cantidad', 100, 90);
+                doc.text('Precio', 135, 90);
+                doc.text('Total', 170, 90);
+                
+                doc.setFontSize(10);
+                let y = 100;
+                sale.items.forEach(item => {
+                    doc.text(item.name, 15, y);
+                    doc.text(item.quantity.toString(), 100, y);
+                    doc.text(`$${item.price.toFixed(2)}`, 135, y);
+                    doc.text(`$${(item.quantity * item.price).toFixed(2)}`, 170, y);
+                    y += 7;
+                });
+                
+                // Línea separadora
+                doc.setDrawColor(200);
+                doc.line(15, y + 5, 195, y + 5);
+                
+                // Total
+                doc.setFontSize(12);
+                doc.text('TOTAL:', 135, y + 15);
+                doc.text(`$${sale.total.toFixed(2)}`, 170, y + 15);
+                
+                // Pie de página
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.text('¡Gracias por su compra!', 105, 270, { align: 'center' });
+                
+                // Guardar el PDF
+                doc.save(`factura-${sale.id}.pdf`);
+            }
+        }
+
+        // Funciones de reportes
+        function generateReport() {
+            const startDate = $('#start-date').val();
+            const endDate = $('#end-date').val();
+            
+            if (!startDate || !endDate) {
+                alert('Seleccione un rango de fechas');
+                return;
+            }
+            
+            const filteredSales = sales.filter(sale => {
+                return sale.date >= startDate && sale.date <= endDate;
+            });
+            
+            const reportTable = $('#report-table');
+            reportTable.empty();
+            
+            filteredSales.forEach(sale => {
+                const customer = sale.customerId ? customers.find(c => c.id === sale.customerId) : null;
+                const customerName = customer ? customer.name : 'Cliente no registrado';
+                
+                sale.items.forEach(item => {
+                    reportTable.append(`
+                        <tr>
+                            <td>${sale.date}</td>
+                            <td>${customerName}</td>
+                            <td>${item.name}</td>
+                            <td>${item.quantity}</td>
+                            <td>$${item.price.toFixed(2)}</td>
+                            <td>$${(item.quantity * item.price).toFixed(2)}</td>
+                        </tr>
+                    `);
+                });
+            });
+        }
+
+        function exportToPDF() {
+            const startDate = $('#start-date').val();
+            const endDate = $('#end-date').val();
+            
+            if (!startDate || !endDate) {
+                alert('Seleccione un rango de fechas');
+                return;
+            }
+            
+            const filteredSales = sales.filter(sale => {
+                return sale.date >= startDate && sale.date <= endDate;
+            });
+            
+            if (filteredSales.length === 0) {
+                alert('No hay datos para el rango de fechas seleccionado');
+                return;
+            }
+            
+            // Usar jsPDF para generar el reporte
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Título del reporte
+            doc.setFontSize(20);
+            doc.setTextColor(40);
+            doc.text('REPORTE DE VENTAS', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.text(`Desde: ${startDate} - Hasta: ${endDate}`, 105, 30, { align: 'center' });
+            
+            // Información de la empresa
+            doc.setFontSize(10);
+            doc.text(companyInfo.name, 15, 40);
+            doc.text(`Generado el: ${new Date().toLocaleDateString()}`, 15, 47);
+            
+            // Preparar datos para la tabla
+            const tableData = [];
+            let totalRevenue = 0;
+            
+            filteredSales.forEach(sale => {
+                const customer = sale.customerId ? customers.find(c => c.id === sale.customerId) : null;
+                const customerName = customer ? customer.name : 'Cliente no registrado';
+                
+                sale.items.forEach(item => {
+                    tableData.push([
+                        sale.date,
+                        customerName,
+                        item.name,
+                        item.quantity,
+                        `$${item.price.toFixed(2)}`,
+                        `$${(item.quantity * item.price).toFixed(2)}`
+                    ]);
+                    totalRevenue += item.quantity * item.price;
+                });
+            });
+            
+            // Agregar tabla
+            doc.autoTable({
+                startY: 60,
+                head: [['Fecha', 'Cliente', 'Producto', 'Cantidad', 'Precio Unitario', 'Total']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: {
+                    fillColor: [52, 152, 219]
+                }
+            });
+            
+            // Agregar total
+            const lastCell = doc.autoTable.previous.finalY;
+            doc.setFontSize(12);
+            doc.text(`Total de ingresos: $${totalRevenue.toFixed(2)}`, 15, lastCell + 15);
+            
+            // Guardar el PDF
+            doc.save(`reporte-ventas-${startDate}-a-${endDate}.pdf`);
+        }
+
+        // Funciones de gráficos
+        function generateDashboardCharts() {
+            // Gráfico de ventas de la última semana
+            const lastWeekSales = getLastWeekSales();
+            const salesCtx = document.getElementById('sales-chart').getContext('2d');
+            
+            new Chart(salesCtx, {
+                type: 'line',
+                data: {
+                    labels: lastWeekSales.dates,
+                    datasets: [{
+                        label: 'Ventas por día',
+                        data: lastWeekSales.values,
+                        borderColor: '#3498db',
+                        tension: 0.1,
+                        fill: true,
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Ventas de los últimos 7 días'
+                        }
+                    }
+                }
+            });
+            
+            // Gráfico de productos populares (los 5 más vendidos)
+            const popularProducts = getPopularProducts(5);
+            const productsCtx = document.getElementById('products-chart').getContext('2d');
+            
+            new Chart(productsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: popularProducts.names,
+                    datasets: [{
+                        data: popularProducts.quantities,
+                        backgroundColor: [
+                            '#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Productos más vendidos'
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateCharts() {
+            // Gráfico de ventas por mes
+            const monthlySales = getMonthlySales();
+            const monthlySalesCtx = document.getElementById('monthly-sales-chart').getContext('2d');
+            
+            new Chart(monthlySalesCtx, {
+                type: 'bar',
+                data: {
+                    labels: monthlySales.months,
+                    datasets: [{
+                        label: 'Ventas por mes',
+                        data: monthlySales.values,
+                        backgroundColor: '#3498db'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Ventas mensuales'
+                        }
+                    }
+                }
+            });
+            
+            // Gráfico de ventas por categoría
+            const categorySales = getSalesByCategory();
+            const categorySalesCtx = document.getElementById('category-sales-chart').getContext('2d');
+            
+            new Chart(categorySalesCtx, {
+                type: 'pie',
+                data: {
+                    labels: categorySales.categories,
+                    datasets: [{
+                        data: categorySales.values,
+                        backgroundColor: [
+                            '#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Ventas por categoría'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Funciones auxiliares para datos de gráficos
+        function getLastWeekSales() {
+            const dates = [];
+            const values = [];
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateString = date.toISOString().split('T')[0];
+                
+                const salesCount = sales.filter(sale => sale.date === dateString).length;
+                
+                dates.push(dateString);
+                values.push(salesCount);
+            }
+            
+            return { dates, values };
+        }
+
+        function getPopularProducts(limit) {
+            // Contar la cantidad vendida por producto
+            const productSales = {};
+            
+            sales.forEach(sale => {
+                sale.items.forEach(item => {
+                    if (productSales[item.id]) {
+                        productSales[item.id].quantity += item.quantity;
+                    } else {
+                        productSales[item.id] = {
+                            name: item.name,
+                            quantity: item.quantity
+                        };
+                    }
+                });
+            });
+            
+            // Convertir a array y ordenar
+            const popularProducts = Object.values(productSales)
+                .sort((a, b) => b.quantity - a.quantity)
+                .slice(0, limit);
+            
+            return {
+                names: popularProducts.map(p => p.name),
+                quantities: popularProducts.map(p => p.quantity)
+            };
+        }
+
+        function getMonthlySales() {
+            const monthlyData = {};
+            
+            sales.forEach(sale => {
+                const month = sale.date.substring(0, 7); // Formato YYYY-MM
+                
+                if (monthlyData[month]) {
+                    monthlyData[month] += sale.total;
+                } else {
+                    monthlyData[month] = sale.total;
+                }
+            });
+            
+            const months = Object.keys(monthlyData).sort();
+            const values = months.map(month => monthlyData[month]);
+            
+            return { months, values };
+        }
+
+        function getSalesByCategory() {
+            const categoryData = {};
+            
+            // Inicializar categorías
+            const categories = [...new Set(products.map(p => p.category))];
+            categories.forEach(category => {
+                categoryData[category] = 0;
+            });
+            
+            // Sumar ventas por categoría
+            sales.forEach(sale => {
+                sale.items.forEach(item => {
+                    const product = products.find(p => p.id === item.id);
+                    if (product) {
+                        categoryData[product.category] += item.quantity * item.price;
+                    }
+                });
+            });
+            
+            return {
+                categories: Object.keys(categoryData),
+                values: Object.values(categoryData)
+            };
+        }
+
+        // Función para crear acceso directo en Windows
+        function createDesktopShortcut() {
+            if (confirm('¿Desea crear un acceso directo en el escritorio?')) {
+                // Esta función normalmente requeriría un entorno de Windows
+                // En un navegador, la funcionalidad es limitada
+                
+                // Crear un archivo .url que funcione como acceso directo
+                const url = window.location.href;
+                const filename = "Sistema de Gestión.url";
+                
+                const content = `[InternetShortcut]
+URL=${url}
+IconIndex=0
+HotKey=0
+IconFile=${window.location.origin}/favicon.ico
+`;
+                
+                const blob = new Blob([content], { type: 'application/octet-stream' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                a.click();
+                
+                alert('Se ha descargado un archivo .url. Colóquelo en su escritorio para crear un acceso directo.');
+            }
+        }
+
+        // Datos de ejemplo
+        function initializeSampleData() {
+            // Productos de ejemplo
+            const sampleProducts = [
+                {
+                    id: 1,
+                    name: "Laptop HP Pavilion",
+                    category: "Electrónicos",
+                    price: 899.99,
+                    stock: 15,
+                    minStock: 5,
+                    image: "https://via.placeholder.com/60x60?text=Laptop"
+                },
+                {
+                    id: 2,
+                    name: "Smartphone Samsung Galaxy",
+                    category: "Electrónicos",
+                    price: 599.99,
+                    stock: 25,
+                    minStock: 10,
+                    image: "https://via.placeholder.com/60x60?text=Phone"
+                },
+                {
+                    id: 3,
+                    name: "Zapatillas Deportivas",
+                    category: "Deportes",
+                    price: 79.99,
+                    stock: 40,
+                    minStock: 15,
+                    image: "https://via.placeholder.com/60x60?text=Shoes"
+                },
+                {
+                    id: 4,
+                    name: "Camiseta de Algodón",
+                    category: "Ropa",
+                    price: 19.99,
+                    stock: 3,
+                    minStock: 10,
+                    image: "https://via.placeholder.com/60x60?text=Shirt"
+                },
+                {
+                    id: 5,
+                    name: "Juego de Herramientas",
+                    category: "Hogar",
+                    price: 49.99,
+                    stock: 8,
+                    minStock: 5,
+                    image: "https://via.placeholder.com/60x60?text=Tools"
+                }
+            ];
+            
+            // Clientes de ejemplo
+            const sampleCustomers = [
+                {
+                    id: 1001,
+                    name: "Juan Pérez",
+                    email: "juan.perez@email.com",
+                    phone: "+1234567890",
+                    address: "Calle Principal 123",
+                    type: "premium",
+                    status: "active",
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    id: 1002,
+                    name: "María García",
+                    email: "maria.garcia@email.com",
+                    phone: "+0987654321",
+                    address: "Avenida Central 456",
+                    type: "regular",
+                    status: "active",
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    id: 1003,
+                    name: "Carlos López",
+                    email: "carlos.lopez@email.com",
+                    phone: "+1122334455",
+                    type: "regular",
+                    status: "inactive",
+                    createdAt: new Date().toISOString()
+                }
+            ];
+            
+            // Ventas de ejemplo
+            const sampleSales = [
+                {
+                    id: 2001,
+                    date: new Date().toISOString().split('T')[0],
+                    customerId: 1001,
+                    items: [
+                        { id: 2, name: "Smartphone Samsung Galaxy", price: 599.99, quantity: 1 },
+                        { id: 5, name: "Juego de Herramientas", price: 49.99, quantity: 2 }
+                    ],
+                    total: 699.97
+                },
+                {
+                    id: 2002,
+                    date: new Date(Date.now() - 86400000).toISOString().split('T')[0], // Ayer
+                    customerId: 1002,
+                    items: [
+                        { id: 1, name: "Laptop HP Pavilion", price: 899.99, quantity: 1 }
+                    ],
+                    total: 899.99
+                }
+            ];
+            
+            // Guardar datos de ejemplo
+            localStorage.setItem('products', JSON.stringify(sampleProducts));
+            localStorage.setItem('customers', JSON.stringify(sampleCustomers));
+            localStorage.setItem('sales', JSON.stringify(sampleSales));
+            
+            // Actualizar variables
+            products = sampleProducts;
+            customers = sampleCustomers;
+            sales = sampleSales;
+        }
+    </script>
+</body>
+</html>
