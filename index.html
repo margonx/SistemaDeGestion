@@ -23,10 +23,15 @@
         body {
             background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-top: 56px; /* Para compensar la navbar fija */
         }
         
         .navbar {
             background-color: var(--secondary-color);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1030;
         }
         
         .sidebar {
@@ -36,6 +41,40 @@
             position: fixed;
             width: 250px;
             padding-top: 20px;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+        
+        /* Sidebar responsive para móviles */
+        @media (max-width: 991.98px) {
+            .sidebar {
+                transform: translateX(-100%);
+                z-index: 1020;
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0 !important;
+            }
+            
+            /* Overlay para cerrar sidebar al hacer clic fuera */
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 1010;
+            }
+            
+            .sidebar-overlay.show {
+                display: block;
+            }
         }
         
         .sidebar a {
@@ -57,12 +96,14 @@
         .main-content {
             margin-left: 250px;
             padding: 20px;
+            transition: margin-left 0.3s ease;
         }
         
         .card-dashboard {
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             transition: transform 0.3s;
+            height: 100%;
         }
         
         .card-dashboard:hover {
@@ -172,9 +213,137 @@
             background-color: #6c757d;
             color: #fff;
         }
+        
+        /* Mejoras responsive para tablas */
+        .table-responsive {
+            overflow-x: auto;
+        }
+        
+        /* Ajustes para pantallas pequeñas */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 15px 10px;
+            }
+            
+            .card-dashboard {
+                margin-bottom: 15px;
+            }
+            
+            /* Mejorar disposición de elementos en formularios */
+            .modal-body .row > div {
+                margin-bottom: 15px;
+            }
+            
+            /* Ajustar botones en móviles */
+            .btn-group-responsive {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .btn-group-responsive .btn {
+                width: 100%;
+            }
+            
+            /* Ajustar disposición de elementos en ventas */
+            #sales-section .row > div {
+                margin-bottom: 20px;
+            }
+            
+            /* Ocultar columnas menos importantes en tablas en móviles */
+            @media (max-width: 576px) {
+                .table-responsive table th:nth-child(3),
+                .table-responsive table td:nth-child(3),
+                .table-responsive table th:nth-child(4),
+                .table-responsive table td:nth-child(4) {
+                    display: none;
+                }
+            }
+        }
+        
+        /* Botón para mostrar/ocultar sidebar en móviles */
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            top: 70px;
+            left: 10px;
+            z-index: 1025;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        @media (max-width: 991.98px) {
+            .sidebar-toggle {
+                display: block;
+            }
+        }
+        
+        /* Ajustes para gráficos en móviles */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 250px;
+            }
+        }
+        
+        /* Mejoras para modales en móviles */
+        @media (max-width: 576px) {
+            .modal-dialog {
+                margin: 10px;
+            }
+            
+            .modal-content {
+                border-radius: 10px;
+            }
+        }
+        
+        /* Ajustes para el dashboard en móviles */
+        @media (max-width: 768px) {
+            .dashboard-stats .col-md-3 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .dashboard-stats .col-md-3 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+        }
+        
+        /* Mejoras para la sección de ventas en móviles */
+        @media (max-width: 768px) {
+            #sales-section .card {
+                margin-bottom: 20px;
+            }
+            
+            #cart-table th:nth-child(2),
+            #cart-table td:nth-child(2) {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Overlay para cerrar sidebar en móviles -->
+    <div class="sidebar-overlay"></div>
+    
+    <!-- Botón para mostrar/ocultar sidebar en móviles -->
+    <button class="sidebar-toggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
     <!-- Login Section -->
     <div id="login-section" class="section active">
         <div class="login-container">
@@ -266,7 +435,7 @@
 
         <div class="d-flex">
             <!-- Sidebar -->
-            <div class="sidebar d-none d-lg-block">
+            <div class="sidebar">
                 <a href="#" class="active" data-section="dashboard">
                     <i class="fas fa-tachometer-alt me-2"></i> Dashboard
                 </a>
@@ -288,24 +457,12 @@
                 </a>
             </div>
 
-            <!-- Mobile Nav -->
-            <div class="d-lg-none bg-dark w-100 p-2">
-                <div class="d-flex justify-content-around">
-                    <a href="#" class="text-white" data-section="dashboard"><i class="fas fa-tachometer-alt"></i></a>
-                    <a href="#" class="text-white" data-section="inventory"><i class="fas fa-box"></i></a>
-                    <a href="#" class="text-white" data-section="customers"><i class="fas fa-users"></i></a>
-                    <a href="#" class="text-white" data-section="sales"><i class="fas fa-shopping-cart"></i></a>
-                    <a href="#" class="text-white" data-section="reports"><i class="fas fa-chart-bar"></i></a>
-                    <a href="#" class="text-white" data-section="alerts"><i class="fas fa-bell"></i></a>
-                </div>
-            </div>
-
             <!-- Main Content -->
             <div class="main-content w-100">
                 <!-- Dashboard Section -->
                 <div id="dashboard-section" class="section active">
                     <h2 class="mb-4">Dashboard</h2>
-                    <div class="row">
+                    <div class="row dashboard-stats">
                         <div class="col-md-3 mb-4">
                             <div class="card card-dashboard">
                                 <div class="card-body">
@@ -375,7 +532,9 @@
                                     <h5>Ventas de la última semana</h5>
                                 </div>
                                 <div class="card-body">
-                                    <canvas id="sales-chart" height="250"></canvas>
+                                    <div class="chart-container">
+                                        <canvas id="sales-chart"></canvas>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -385,7 +544,9 @@
                                     <h5>Productos Populares</h5>
                                 </div>
                                 <div class="card-body">
-                                    <canvas id="products-chart" height="250"></canvas>
+                                    <div class="chart-container">
+                                        <canvas id="products-chart"></canvas>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -597,7 +758,7 @@
                                         <div>
                                             <h5>Total: <span id="cart-total">$0.00</span></h5>
                                         </div>
-                                        <div>
+                                        <div class="btn-group-responsive">
                                             <button class="btn btn-success" id="complete-sale">
                                                 <i class="fas fa-check me-1"></i> Completar Venta
                                             </button>
@@ -648,7 +809,9 @@
                                     <h5>Ventas por Mes</h5>
                                 </div>
                                 <div class="card-body">
-                                    <canvas id="monthly-sales-chart" height="250"></canvas>
+                                    <div class="chart-container">
+                                        <canvas id="monthly-sales-chart"></canvas>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -658,7 +821,9 @@
                                     <h5>Ventas por Categoría</h5>
                                 </div>
                                 <div class="card-body">
-                                    <canvas id="category-sales-chart" height="250"></canvas>
+                                    <div class="chart-container">
+                                        <canvas id="category-sales-chart"></canvas>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -983,7 +1148,26 @@
             // Inicializar tooltips
             $('[data-bs-toggle="tooltip"]').tooltip();
 
-            // Event Listeners
+            // Event Listeners para responsive
+            $('.sidebar-toggle').click(function() {
+                $('.sidebar').toggleClass('show');
+                $('.sidebar-overlay').toggleClass('show');
+            });
+            
+            $('.sidebar-overlay').click(function() {
+                $('.sidebar').removeClass('show');
+                $('.sidebar-overlay').removeClass('show');
+            });
+
+            // Cerrar sidebar al hacer clic en un enlace (en móviles)
+            $('.sidebar a').click(function() {
+                if ($(window).width() < 992) {
+                    $('.sidebar').removeClass('show');
+                    $('.sidebar-overlay').removeClass('show');
+                }
+            });
+
+            // Event Listeners para autenticación
             $('#show-register').click(function(e) {
                 e.preventDefault();
                 showRegister();
@@ -1009,7 +1193,8 @@
                 logout();
             });
 
-            $('.sidebar a, .bg-dark a').click(function(e) {
+            // Event Listeners para navegación
+            $('.sidebar a').click(function(e) {
                 e.preventDefault();
                 const section = $(this).data('section');
                 showSection(section);
@@ -1019,6 +1204,7 @@
                 $(`.sidebar a[data-section="${section}"]`).addClass('active');
             });
 
+            // Event Listeners para funcionalidades
             $('#save-product').click(addProduct);
             $('#update-product').click(updateProduct);
             $('#save-customer').click(addCustomer);
@@ -1170,7 +1356,6 @@
             $('#total-customers').text(totalCustomers);
             $('#today-sales').text(todaySales);
             $('#low-stock-count').text(lowStockCount);
-            $('#total-income').text('$' + totalIncome.toFixed(2));
             
             // Actualizar tabla de stock bajo
             const lowStockTable = $('#low-stock-table');
@@ -2147,7 +2332,11 @@
             const lastWeekSales = getLastWeekSales();
             const salesCtx = document.getElementById('sales-chart').getContext('2d');
             
-            new Chart(salesCtx, {
+            if (window.salesChart) {
+                window.salesChart.destroy();
+            }
+            
+            window.salesChart = new Chart(salesCtx, {
                 type: 'line',
                 data: {
                     labels: lastWeekSales.dates,
@@ -2162,6 +2351,7 @@
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         title: {
                             display: true,
@@ -2175,7 +2365,11 @@
             const popularProducts = getPopularProducts(5);
             const productsCtx = document.getElementById('products-chart').getContext('2d');
             
-            new Chart(productsCtx, {
+            if (window.productsChart) {
+                window.productsChart.destroy();
+            }
+            
+            window.productsChart = new Chart(productsCtx, {
                 type: 'doughnut',
                 data: {
                     labels: popularProducts.names,
@@ -2188,6 +2382,7 @@
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         legend: {
                             position: 'bottom'
@@ -2206,7 +2401,11 @@
             const monthlySales = getMonthlySales();
             const monthlySalesCtx = document.getElementById('monthly-sales-chart').getContext('2d');
             
-            new Chart(monthlySalesCtx, {
+            if (window.monthlySalesChart) {
+                window.monthlySalesChart.destroy();
+            }
+            
+            window.monthlySalesChart = new Chart(monthlySalesCtx, {
                 type: 'bar',
                 data: {
                     labels: monthlySales.months,
@@ -2218,6 +2417,7 @@
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         title: {
                             display: true,
@@ -2231,7 +2431,11 @@
             const categorySales = getSalesByCategory();
             const categorySalesCtx = document.getElementById('category-sales-chart').getContext('2d');
             
-            new Chart(categorySalesCtx, {
+            if (window.categorySalesChart) {
+                window.categorySalesChart.destroy();
+            }
+            
+            window.categorySalesChart = new Chart(categorySalesCtx, {
                 type: 'pie',
                 data: {
                     labels: categorySales.categories,
@@ -2244,6 +2448,7 @@
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                         legend: {
                             position: 'bottom'
